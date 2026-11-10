@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>קלפי כדורגל</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{color:#f2f2f4;font-family:system-ui,Arial,sans-serif;background:#1b1f27 repeating-linear-gradient(45deg,#20252f 0 12px,#1b1f27 12px 24px);-webkit-user-select:none;user-select:none}
+button,input{font:inherit;font-size:13px;padding:6px 10px;border-radius:10px;border:1px solid #555;background:#2b303b;color:#fff}
+button{cursor:pointer}button.p{background:#5b4bdb;border-color:#5b4bdb;font-weight:700}button.g{background:#1f9d55;border-color:#1f9d55}button.r{background:#d64545;border-color:#d64545}
+button:disabled{opacity:.4}
+#rot{position:fixed;inset:0;background:#1b1f27;z-index:99;display:none;align-items:center;justify-content:center;font-size:22px;text-align:center;padding:20px}
+@media (orientation:portrait){#rot{display:flex}}
+#app{height:100dvh;padding:6px 10px;display:flex;flex-direction:column}
+.lob{display:flex;gap:10px;height:100%;align-items:stretch}
+.pitch{position:relative;flex:1;border-radius:14px;background:repeating-linear-gradient(90deg,#2e8b3d 0 50px,#34993f 50px 100px);border:3px solid #fff8}
+.pitch:before{content:"";position:absolute;top:0;bottom:0;left:50%;border-left:2px solid #fff8}
+.pl{position:absolute;transform:translate(-50%,-50%);text-align:center;font-size:11px;width:70px}
+.pl b{display:block;background:#0008;border-radius:8px;padding:0 4px;white-space:nowrap;overflow:hidden}
+.pl small{color:#ffe66d}.rd{color:#7dff9c}
+.side{width:190px;display:flex;flex-direction:column;gap:8px;justify-content:center}
+.side input,.side button{width:100%}
+.cd{--cw:16.5vh;width:var(--cw);height:calc(var(--cw)*1.4);border-radius:7px;background:#e9d9b8;color:#222;border:1px solid #8a7550;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:3px 1px 0;font-size:max(7px,1.7vh);text-align:center;font-weight:700;flex:0 0 auto;overflow:hidden;direction:ltr}
+.cd .ic{font-size:6vh;margin-top:3px;line-height:1}.cd .lb{line-height:1.05}
+.cd:after{content:"";display:block;height:5px;width:100%;background:var(--s,#888)}
+.cd.back{background:#3b3f9c;color:#fff;justify-content:center;font-size:5vh}.cd.back:after{display:none}
+.cd.empty{background:#0003;border:1px dashed #666}.cd.empty:after{display:none}
+.cd.sel{transform:translateY(-10px);box-shadow:0 0 0 3px #ffe66d}
+.cd.big{--cw:19vh}
+.game{display:flex;flex-direction:column;height:100%;gap:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;direction:ltr;height:25vh}
+.top .cd{--cw:12vh}
+.oth{display:flex;gap:10px;justify-content:center;flex:1;font-size:11px;text-align:center;flex-wrap:wrap}
+.oth>div{position:relative;min-width:54px}.oth .on b{color:#ffe66d}
+.nb{position:absolute;top:0;right:-2px;background:#d64545;border-radius:10px;min-width:20px;padding:0 5px;font-weight:700;font-size:12px}
+.ctl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px}.ctl b{font-size:22px;line-height:1}
+.ctl .row{display:flex;gap:4px}
+.mid{display:flex;justify-content:center;align-items:center;gap:3vh;direction:ltr;flex:1;min-height:0}
+.cap{font-size:10px;text-align:center;color:#aab}
+.info{text-align:center;font-size:12px;height:4.5vh;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bot{display:flex;gap:8px;align-items:flex-end;direction:ltr;height:30vh}
+.hand{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex:1;padding:14px 6px 4px;-webkit-overflow-scrolling:touch;touch-action:pan-x;height:100%;align-items:flex-end}
+.acts{display:flex;flex-direction:column;gap:5px;width:130px;direction:rtl}
+.pen{background:#d64545;border-radius:8px;padding:2px 8px;font-size:11px;text-align:center}
+.ovl{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:9;padding:10px}
+.ovb{background:#2b303b;border-radius:16px;padding:14px;width:100%;max-width:420px;max-height:96vh;overflow:auto}
+.ovb input{width:100%;margin:6px 0}.ovb button{width:100%;margin-top:6px}
+.ovb h3{margin:4px 0}
+.sg div{padding:7px;border-bottom:1px solid #444;cursor:pointer}
+.sc div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #444}
+#toast{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#d64545;padding:8px 14px;border-radius:10px;display:none;z-index:30;max-width:90vw;text-align:center}
+</style></head><body>
+<div id="rot">📱↻<br>סובבו את המכשיר לרוחב כדי לשחק</div>
+<div id="app">מתחבר…</div><div class="ovl" id="ov" style="display:none"></div><div id="toast"></div>
+<script>
+let PLY=[];
+const IC={pos:'👕',ach:'🏆',eur:'🌍',foot:'🦶',age:'🎂',league:'⚽',with:'🤝',club:'🛡️',goals:'🥅',final:'🏟️',ret:'👟'};
+const CO={pos:'#d94b4b',ach:'#3fd35c',eur:'#6a4bd9',foot:'#e07a4b',age:'#4be08a',league:'#9b4bd9',with:'#4bd9d9',club:'#4baee0',born:'#bde04b',goals:'#e04b9b',final:'#8be04b',ret:'#4b7be0'};
+const FL={ES:'🇪🇸',EN:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',FR:'🇫🇷',AR:'🇦🇷',PT:'🇵🇹',IT:'🇮🇹',DE:'🇩🇪'};
+const XY=[[86,50],[70,16],[70,84],[54,50],[34,14],[34,86],[26,50],[8,50]];
+const app=document.getElementById("app"),ov=document.getElementById("ov");
+let pid;try{pid=localStorage.fpid}catch(e){}
+if(!pid){pid="p"+Math.random().toString(36).slice(2,9);try{localStorage.fpid=pid}catch(e){}}
+let S=null,ws,sel=null,locked=false;
+const esc=s=>{const d=document.createElement("div");d.textContent=s==null?'':s;return d.innerHTML};
+const send=o=>{o.pid=pid;if(ws&&ws.readyState===1)ws.send(JSON.stringify(o))};
+function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",3500)}
+document.addEventListener("pointerdown",()=>{if(locked)return;locked=true;try{const r=document.documentElement;(r.requestFullscreen?r.requestFullscreen():Promise.resolve()).catch(()=>{}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock("landscape")).catch(()=>{})}catch(e){}},{once:false});
+function av(s,z){const r=()=>{s=(s*9301+49297)%233280;return s/233280};
+ const sk=['#f1c27d','#e0a370','#c68642','#8d5524','#ffdbac'][Math.floor(r()*5)],hr=['#222','#6b3e1d','#c9a227','#a33'][Math.floor(r()*4)],sh=['#d33','#36c','#2a8','#e90'][Math.floor(r()*4)],nr=12+Math.floor(r()*4);
+ return `<svg width="${z}" height="${z}" viewBox="0 0 100 100"><rect x="30" y="82" width="40" height="18" rx="8" fill="${sh}"/><ellipse cx="50" cy="46" rx="29" ry="42" fill="${sk}"/><path d="M21 22 Q50 -6 79 22 Q50 14 21 22Z" fill="${hr}"/><circle cx="40" cy="52" r="3.5" fill="#111"/><circle cx="60" cy="52" r="3.5" fill="#111"/><ellipse cx="50" cy="66" rx="${nr}" ry="${nr+3}" fill="${sk}" stroke="#0005" stroke-width="2"/><circle cx="45" cy="72" r="2" fill="#0006"/><circle cx="55" cy="72" r="2" fill="#0006"/><path d="M42 86 Q50 91 58 86" stroke="#a33" stroke-width="3" fill="none"/></svg>`}
+function cd(c,cls,attr){
+ if(!c)return `<div class="cd empty ${cls||''}"></div>`;
+ let ic,lb=c.l,col;
+ if(c.k==='red'){ic='🟥';col='#d94b6b'}else if(c.k==='var'){ic='📺';col='#6cd44b'}else if(c.k==='pun'){ic='⚠️';lb=c.t;col='#4b5bd9'}
+ else{ic=c.cat==='born'?FL[c.v]:IC[c.cat];col=CO[c.cat]}
+ return `<div class="cd ${cls||''}" ${attr||''} style="--s:${col}"><div class="ic">${ic}</div><div class="lb">${esc(lb)}</div></div>`}
+const back=(n,cap)=>`<div><div class="cd back">${n}</div><div class="cap">${cap}</div></div>`;
+function connect(){ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host);
+ ws.onopen=()=>send({t:"hi"});
+ ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.ply){PLY=d.ply;return}if(d.err){toast(d.err);return}S=d;render()};
+ ws.onclose=()=>setTimeout(connect,1500)}
+function render(){
+ if(!S)return;
+ const me=S.pl.find(p=>p.id===S.me);
+ if(S.phase==='lobby')return lobby(me);
+ if(S.phase==='over')return over();
+ game(me)}
+function lobby(me){
+ if(!me&&document.getElementById("nm"))return;
+ let h='<div class="lob"><div class="pitch">'+S.pl.map((p,i)=>{const[x,y]=XY[i];return `<div class="pl" style="left:${x}%;top:${y}%">${av(p.av,44)}<b>${esc(p.name)}</b><small>${p.pos}</small><div class="${p.ready?'rd':''}">${p.ready?'✔ מוכן':'ממתין'}</div></div>`}).join("")+'</div><div class="side">';
+ if(!me)h+='<input id="nm" maxlength="12" placeholder="השם שלך"><button class="p" id="go">הצטרף</button>';
+ else h+=`<button class="${me.ready?'':'g'}" id="rd">${me.ready?'ביטול מוכנות':'מוכן / התחל'}</button><div class="info" style="white-space:normal;height:auto">${S.pl.length<2?'ממתינים לעוד שחקנים (2–8)':'המשחק מתחיל כשכולם מוכנים'}</div>`;
+ app.innerHTML=h+'</div></div>';
+ const g=document.getElementById("go");if(g)g.onclick=()=>{const n=document.getElementById("nm").value.trim();if(n)send({t:"join",name:n})};
+ const r=document.getElementById("rd");if(r)r.onclick=()=>send({t:"ready"})}
+function over(){
+ app.innerHTML='<div class="ovb" style="margin:auto"><h3>🏆 המשחק נגמר</h3><div class="sc">'+S.rank.map((n,i)=>`<div><span>${i+1}. ${esc(n)}</span><span>${i==0?'🥇':''}</span></div>`).join("")+'</div><button class="p" id="ag">משחק חדש</button></div>';
+ document.getElementById("ag").onclick=()=>send({t:"again"})}
+function game(me){
+ const mine=S.turn===S.me,cu=S.pl.find(p=>p.id===S.turn),busy=S.modal||S.vote;
+ const selc=S.hand.find(c=>c.id===sel);
+ let h='<div class="game"><div class="top">'+`<div><div class="cap">זרוק</div>${cd(S.disc,'')}</div>`+
+ '<div class="oth">'+S.pl.filter(p=>p.id!==S.me).map(p=>`<div class="${p.id===S.turn?'on':''}">${av(p.av,Math.round(window.innerHeight*0.13))}<span class="nb">${p.out?'🏁':p.n}</span><br><b>${esc(p.name)}</b></div>`).join("")+'</div>'+
+ `<div class="ctl"><b id="tm">${Math.ceil(S.left/1000)}</b><div class="row"><button id="cat" ${busy?'disabled':''}>🔄</button><button id="mg" ${S.canChal?'':'disabled'} title="ערער">📢</button></div><span>${S.mega?'מגפון: זמין':'מגפון: חסום'}</span></div></div>`;
+ h+='<div class="mid">'+back(S.pun,'עונשים')+S.piles.map((p,i)=>`<div data-p="${i}">${cd(p.top,'big')}<div class="cap">${p.n}</div></div>`).join("")+back(S.deck,'קופה')+'</div>';
+ h+=`<div class="info">${S.pen?`<span class="pen">עונש פעיל: ${esc(S.pen)}</span> `:''}${esc(S.last?'אחרון: '+S.last:'')} · <b>${mine?'התור שלך! 🎯':'תור של '+esc(cu?cu.name:'')}</b></div>`;
+ h+='<div class="bot"><div class="hand">'+S.hand.map(c=>cd(c,c.id===sel?'sel':'','data-c="'+c.id+'"')).join("")+'</div><div class="acts">';
+ if(mine&&S.choose&&!S.modal)h+='<button class="p" data-pen="main">שלוף קלף רגיל</button><button class="r" data-pen="pun">שלוף קלף עונש</button>';
+ else if(mine&&!busy)h+=`${selc&&selc.k==='red'?'<button class="r" id="red">שחק אדום</button>':''}<button id="pass">אין לי מה לשחק</button>`;
+ h+='</div></div></div>';
+ const m=S.modal,v=S.vote;
+ if(m){const by=m.by===S.me;h+=`<div class="ovl"><div class="ovb"><h3>${esc(m.title)}</h3><div>${esc(m.text)}</div>`+
+  (m.kind==='chalpick'?(by?'<button class="p" data-cp="std">שלוף 2 קלפים רגילים</button><button class="r" data-cp="pun">שלוף קלף עונש</button>':'<div class="cap">ממתינים להחלטה…</div>'):
+   (m.by==null||by)?'<button class="p" id="ok">הבנתי</button>':'<div class="cap">ממתינים לאישור…</div>')+'</div></div>'}
+ else if(v){h+=`<div class="ovl"><div class="ovb">`+(v.type==='cat'?`<div>כפתור החלפת הקטגוריה נלחץ. האם אתה מסכים להחליף קטגוריה?</div>`:`<h3>📢 ערעור של ${esc(v.byName)}</h3><div>האם השחקן "${esc(v.name)}" של ${esc(v.tn)} מתאים לקריטריונים?</div><div class="cap">סיבת הערעור: ${esc(v.reason||'—')}</div>`)+
+  (v.mine?'<div class="cap">ממתינים לשאר השחקנים…</div>':'<button class="g" data-v="1">כן</button><button class="r" data-v="0">לא</button>')+'</div></div>'}
+ app.innerHTML=h;
+ const q=s=>app.querySelector(s);
+ app.querySelectorAll("[data-c]").forEach(e=>e.onclick=()=>{sel=sel===e.dataset.c?null:e.dataset.c;render()});
+ app.querySelectorAll("[data-p]").forEach(e=>e.onclick=()=>{if(mine&&!busy&&!S.choose&&selc){if(selc.k==='reg')askName(+e.dataset.p,selc.id);else toast('קלף מיוחד אינו מונח על ערימה')}});
+ app.querySelectorAll("[data-pen]").forEach(e=>e.onclick=()=>send({t:"pen",kind:e.dataset.pen}));
+ app.querySelectorAll("[data-cp]").forEach(e=>e.onclick=()=>send({t:"cpick",k:e.dataset.cp}));
+ app.querySelectorAll("[data-v]").forEach(e=>e.onclick=()=>send({t:"vote",y:e.dataset.v==="1"}));
+ if(q("#red"))q("#red").onclick=()=>{send({t:"red",card:sel});sel=null};
+ if(q("#pass"))q("#pass").onclick=()=>send({t:"pass"});
+ if(q("#ok"))q("#ok").onclick=()=>send({t:"ok"});
+ q("#cat").onclick=()=>send({t:"cat"});
+ q("#mg").onclick=()=>askText("📢 למה השחקן לא מתאים ל-3 הקטגוריות?","סיבה קצרה…",t=>send({t:"chal",reason:t}))}
+function askText(title,ph,cb,sug,onOk){
+ ov.innerHTML=`<div class="ovb"><div>${title}</div><input id="pn" autocomplete="off" placeholder="${ph}"><div class="sg" id="sg"></div><button class="p" id="okn">אישור</button><button id="cn">ביטול</button></div>`;
+ ov.style.display="flex";const i=document.getElementById("pn"),sg=document.getElementById("sg");i.focus();
+ const nz=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ if(sug)i.oninput=()=>{const v=nz(i.value.trim());sg.innerHTML=v?PLY.filter(p=>nz(p[0]).includes(v)).slice(0,3).map(p=>`<div data-n="${esc(p[0])}">${esc(p[0])} (${p[1]})</div>`).join(""):"";sg.querySelectorAll("div").forEach(d=>d.onclick=()=>{i.value=d.dataset.n;sg.innerHTML=""})};
+ const close=()=>{ov.style.display="none";ov.innerHTML=""};
+ document.getElementById("cn").onclick=close;
+ document.getElementById("okn").onclick=()=>{const n=i.value.trim();if(!n)return;close();cb(n)}}
+const askName=(pi,card)=>askText("איזה שחקן מתאים לשלושת הקלפים?","הקלד שם חופשי…",n=>{send({t:"play",card,pile:pi,name:n});sel=null},true);
+setInterval(()=>{if(S&&S.phase==='play'&&!S.choose&&!S.modal&&!S.vote){S.left=Math.max(0,S.left-250);const t=document.getElementById("tm");if(t)t.textContent=Math.ceil(S.left/1000)}},250);
+connect();
+</script></body></html>
